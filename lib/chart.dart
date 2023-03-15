@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
-import 'dart:math' as math;
 import 'dart:async';
-
+import 'package:flutter/services.dart';
+import 'package:csv/csv.dart';
+import 'dart:math' as math;
 class LiveChartWidget extends StatefulWidget {
   const LiveChartWidget({Key? key}) : super(key: key);
   @override
@@ -10,9 +11,18 @@ class LiveChartWidget extends StatefulWidget {
 }
 
 class _LiveChartWidgetState extends State<LiveChartWidget> {
-  int _counter1 = 0; //temp
-  int _counter2 = 0; //humid
+  String _counter1 = ''; //temp
+  String _counter2 = ''; //humid
+  List<List<dynamic>> _data = [];
   late Timer _timer;
+  void _loadCsv() async{
+    final _rawData = await rootBundle.loadString("assets/sample.csv");
+    List<List<dynamic>> _listData = const CsvToListConverter().convert(_rawData);
+    setState(() {
+      _data = _listData;
+
+    });
+  }
 
   @override
   void initState() {
@@ -23,11 +33,14 @@ class _LiveChartWidgetState extends State<LiveChartWidget> {
 
   void _startTimer() {
     chartData = getChartData();
+    _loadCsv();
+    int i=1;
     Timer.periodic(const Duration(seconds: 5), updateDataSource);
     _timer = Timer.periodic(Duration(seconds: 5), (timer) {
       setState(() {
-        _counter1 = math.Random().nextInt(5) + 29;
-        _counter2 = math.Random().nextInt(10) + 32;
+        _counter1 = _data[i][0].toString();//math.Random().nextInt(5) + 29;
+        _counter2 = _data[i][1].toString();//math.Random().nextInt(10) + 32;
+        i++;
       });
     });
   }
@@ -55,9 +68,10 @@ class _LiveChartWidgetState extends State<LiveChartWidget> {
     ];
   }
 
+
   int time = 10;
   updateDataSource(Timer timer) {
-    chartData.add(LiveData(time++, (math.Random().nextInt(15) + 65)));
+    chartData.add(LiveData(time++, math.Random().nextInt(5) + 32));
     chartData.removeAt(0);
     _chartSeriesController.updateDataSource(
         addedDataIndex: chartData.length - 1, removedDataIndex: 0);
